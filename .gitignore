@@ -1,0 +1,36 @@
+# .NET build outputs
+bin/
+obj/
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+.cursorrules/
+.cursorrules.md/
+.cursorrules.txt/
+.cursorrules.yml/
+.cursorrules.yaml/
+.cursorrules.json/
+.cursorrules.jsonc/
+.cursorrules.json5/
+.cursorrules.jsonp/
+
+# User-specific settings
+*.user
+*.suo
+
+# Local databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# logs
+*.log
+
+# environment variables and secrets
+.env
+.env.*
+!.env.example
