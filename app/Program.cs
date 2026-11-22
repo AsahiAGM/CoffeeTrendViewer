@@ -62,7 +62,7 @@ void DataBaseInitialize(SqliteConnection connection)
         CREATE TABLE IF NOT EXISTS CoffeeLogs(
             Id INTEGER PRIMARY KEY,
             CoffeeName TEXT NOT NULL,
-            Rating INTEGER
+            Rating INTEGER NOT NULL
         );
     """;
 
@@ -174,10 +174,12 @@ List<CoffeeLog> GetCoffeeLogs(SqliteConnection connection)
     """;
 
     using var reader = selectCommand.ExecuteReader();
+    int coffeeNameOrdinal = reader.GetOrdinal("CoffeeName");
+    int ratingOrdinal = reader.GetOrdinal("Rating");
 
     while(reader.Read())
     {
-        logs.Add(new CoffeeLog(reader.GetString(0),  reader.GetInt32(1)));
+        logs.Add(new CoffeeLog(reader.GetString(coffeeNameOrdinal),  reader.GetInt32(ratingOrdinal)));
     }
 
     return logs;
