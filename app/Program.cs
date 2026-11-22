@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Data.Sqlite;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,9 +17,45 @@ var connectionString = $"Data Source={dbPath}";
     using var connection = new SqliteConnection(connectionString);
     connection.Open();
 
+    // set DB and table
     Console.WriteLine($"SQLite connected. Path[{dbPath}]\n");
+    DataBaseInitialize(connection);
 
-    // set command
+    // test INSERT database
+    Console.WriteLine();
+    var coffeeLog = GetCoffeeLog();
+
+    Console.WriteLine();
+    if(InsertLog(connection, coffeeLog) > 0)
+    {
+        Console.WriteLine("INSERT succeeded.");
+    }
+    else
+    {
+        Console.WriteLine("INSERT NOTHING");
+    }
+
+    // test READ database
+    Console.WriteLine();
+    var coffeeLogs = GetCoffeeLogs(connection);
+    Console.WriteLine("---CoffeeLogs---");
+    foreach(var log in coffeeLogs)
+    {
+        Console.WriteLine($"{log.CoffeeName} rating:{log.Rating}");
+    }
+
+    // end
+    Console.WriteLine();
+}
+
+
+app.MapGet("/", () => "Hello World!");
+app.Run();
+
+//---------------------------------------------------------------------------------------------------------
+// local method
+void DataBaseInitialize(SqliteConnection connection)
+{
     using var command = connection.CreateCommand();
 
     command.CommandText = """
@@ -42,7 +79,6 @@ var connectionString = $"Data Source={dbPath}";
     """;
 
     using var reader = verifyCommand.ExecuteReader();
-
     if(reader.Read())
     {
         Console.WriteLine($"Verified table: {reader["name"]}");
@@ -51,55 +87,15 @@ var connectionString = $"Data Source={dbPath}";
     {
         Console.WriteLine("Table not found.");
     }
-
-    // test INSERT database
-    Console.WriteLine();
-
-    var coffeeLog = GetCoffeeLog();
-    if(InsertLog(connection, coffeeLog) > 0)
-    {
-        Console.WriteLine("INSERT succeeded.");
-    }
-    else
-    {
-        Console.WriteLine("INSERT NOTHING");
-    }
-
-    // test read database
-    Console.WriteLine();
-    using var selectCommand = connection.CreateCommand();
-
-   selectCommand.CommandText = """
-        SELECT Id, CoffeeName, Rating
-        FROM CoffeeLogs;
-    """;
-
-    using var secondReader = selectCommand.ExecuteReader();
-
-    Console.WriteLine("---CoffeeLogs---");
-    while(secondReader.Read())
-    {
-        Console.WriteLine($"Id[{secondReader["Id"]}] {secondReader["CoffeeName"]} rating: {secondReader["Rating"]}");
-    }
-
-    // end
-    Console.WriteLine();
-
 }
 
-
-app.MapGet("/", () => "Hello World!");
-
-app.Run();
-
-// local method
 string GetCoffeeName()
 {
     string? usersInput = "";
 
     while(string.IsNullOrWhiteSpace(usersInput))
     {
-        Console.WriteLine("\nPlease write favorite coffee name.");
+        Console.WriteLine("Please write favorite coffee name.");
         usersInput = Console.ReadLine();
     }
 
@@ -164,4 +160,25 @@ int InsertLog(SqliteConnection connection, CoffeeLog coffeeLog)
     insertCommand.Parameters.AddWithValue("@Rating", coffeeLog.Rating);
 
     return insertCommand.ExecuteNonQuery();
+}
+
+List<CoffeeLog> GetCoffeeLogs(SqliteConnection connection)
+{
+    List<CoffeeLog> logs = new();
+
+    using var selectCommand = connection.CreateCommand();
+
+    selectCommand.CommandText = """
+        SELECT CoffeeName, Rating
+        FROM CoffeeLogs;
+    """;
+
+    using var reader = selectCommand.ExecuteReader();
+
+    while(reader.Read())
+    {
+        logs.Add(new CoffeeLog(reader.GetString(0),  reader.GetInt32(1)));
+    }
+
+    return logs;
 }
